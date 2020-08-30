@@ -6,10 +6,12 @@
 static volatile uint8_t iic_address;
 uint8_t ina219_buf[3];
 
+#define CAL_MSBFIRST 0x0010
+
 void INA219_Initialise(uint8_t addr) {
     iic_address = addr;
-    TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG);
-    TWI0_write2ByteRegister(iic_address, INA219_CAL, 0x1000);
+    TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
+    TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG_MSBFIRST);
 }
 
 uint16_t get_shunt_voltage_raw() {
@@ -22,21 +24,30 @@ uint16_t get_bus_voltage_raw() {
 }
 
 uint16_t get_current_raw() {
-    TWI0_write2ByteRegister(iic_address, INA219_CAL, 0x1000);
+    // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
     return TWI0_read2ByteRegister(iic_address, INA219_CURRENT);
    
 }
 
 uint16_t get_power_raw() {
-    TWI0_write2ByteRegister(iic_address, INA219_CAL, 0x1000);
+    // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
     return TWI0_read2ByteRegister(iic_address, INA219_POWER);
    
 }
 
+
 struct ina219_data INA219_getReadings() {
+    
     struct ina219_data readings;
+    
+    // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
+    TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG_MSBFIRST);
 
     uint16_t reading;
+    readings.bus_voltage = 0.0;
+    readings.shunt_voltage = 0.0;
+    readings.current = 0.0;
+    readings.power = 0.0;
 
     reading = get_shunt_voltage_raw();
     readings.shunt_voltage = reading * 0.01;
@@ -45,11 +56,12 @@ struct ina219_data INA219_getReadings() {
     readings.bus_voltage = reading * 0.001;
 
     reading = get_current_raw();
-    readings.current = (float)(reading / 10) ;
+    readings.current = ((float)reading / 10.0 ) ;
     
     reading = get_power_raw();
-    readings.power = (float)(reading * 2);
-
+    readings.power = ((float)reading * 2.0 );
+    
     return readings;
+
 }
 

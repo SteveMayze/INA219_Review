@@ -56,33 +56,38 @@ uint8_t readString(bool block){
 #ifdef _INA219_CHECK
 
 #define INA219_ADDRESS INA219_ADDR_GND_GND
-#define DISPLAY_ADDR IS31FL3637_Addr7_GND_GND
+#define DISPLAY_A_ADDR IS31FL3637_Addr7_GND_GND
 
+void splitFloat(int *result, float value){
+    result[0] = trunc(value);
+    result[1]= trunc((value - result[0]) * 1000);
+}
 int main(void)
 {
     /* Initialises MCU, drivers and middle-ware */
     SYSTEM_Initialize();
 
     INA219_Initialise(INA219_ADDRESS);
-    IS31FL3637_Initialise(DISPLAY_ADDR);
+    IS31FL3637_Initialise(DISPLAY_A_ADDR);
 
-    struct ina219_data reading;
-    char sbuf[80];
+    struct ina219_data readings;
+    int values[2];
+    
     while (1){
-        reading = INA219_getReadings();
+        
+       readings = INA219_getReadings();
         
         printf("READINGS\n");
-        sprintf(sbuf, "  Bus Voltage: %f mV\n", reading.bus_voltage);
-        printf(sbuf);
-        sprintf(sbuf, "Shunt Voltage: %f V\n", reading.shunt_voltage);
-        printf(sbuf);
-        sprintf(sbuf, "      Current: %f A\n", reading.current);
-        printf(sbuf);
-        sprintf(sbuf, "        Power: %f W\n", reading.power);
-        printf(sbuf);
-        sprintf(sbuf, "         Test: %f \n", 25.3);
-        printf(sbuf);
+        splitFloat(values, readings.bus_voltage);
+        printf("  Bus Voltage: %d.%03d V\n", values[0], values[1]);
+        splitFloat(values, readings.shunt_voltage);
+        printf("Shunt Voltage: %d.%03d mV\n", values[0], values[1]);
+        splitFloat(values, readings.current);
+        printf("      Current: %d.%03d mA\n", values[0], values[1]);
+        splitFloat(values, readings.power);
+        printf("        Power: %d.%03d mW\n", values[0], values[1]);
         LED_Toggle();
+
         _delay_ms(10000);
     }
 }
