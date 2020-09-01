@@ -40,6 +40,7 @@ extern "C" {
 #define IS31FL3637_LK_TOKEN 0xC5
     
 #define IS31FL3637_PAGE_LED_CTRL 0x00
+#define IS31FL3637_PAGE_PWM_REG 0x01
 #define IS31FL3637_PAGE_ABM_REG 0x02
 #define IS31FL3637_PAGE_CFG_REG 0x03
 
@@ -155,7 +156,11 @@ uint8_t IS31FL3637_pwm_reg[12][16];
 uint8_t IS31FL3637_abm_reg[12][16];
 uint8_t IS31FL3637_abm_ctl_reg[12];
 
+void IS31FL3637_Initialise_for_rainbow(uint8_t display_addr);
 void IS31FL3637_Initialise(uint8_t display_addr);
+void IS31FL3637_set_LED(uint8_t display_addr, uint8_t column, uint8_t row, uint8_t red, uint8_t green, uint8_t blue);
+void IS31FL3637_update_display(uint8_t display_addr ) ;
+
 
 
 #ifdef	__cplusplus

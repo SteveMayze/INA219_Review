@@ -10,6 +10,7 @@ uint8_t ina219_buf[3];
 
 void INA219_Initialise(uint8_t addr) {
     iic_address = addr;
+    
     TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
     TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG_MSBFIRST);
 }
@@ -24,13 +25,13 @@ uint16_t get_bus_voltage_raw() {
 }
 
 uint16_t get_current_raw() {
-    // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
+    TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
     return TWI0_read2ByteRegister(iic_address, INA219_CURRENT);
    
 }
 
 uint16_t get_power_raw() {
-    // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
+    TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
     return TWI0_read2ByteRegister(iic_address, INA219_POWER);
    
 }
@@ -41,7 +42,7 @@ struct ina219_data INA219_getReadings() {
     struct ina219_data readings;
     
     // TWI0_write2ByteRegister(iic_address, INA219_CAL, CAL_MSBFIRST);
-    TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG_MSBFIRST);
+    // TWI0_write2ByteRegister(iic_address, INA219_CFG, INA219_DEFAULT_CFG_MSBFIRST);
 
     uint16_t reading;
     readings.bus_voltage = 0.0;
