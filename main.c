@@ -63,6 +63,12 @@ void splitFloat(int *result, float value) {
     result[1] = trunc((value - result[0]) * 1000);
 }
 
+volatile static bool switch_pressed;
+
+static void PORTB_SW300_PB5_detect() {
+    switch_pressed = true;
+}
+
 int main(void) {
     /* Initialises MCU, drivers and middle-ware */
     SYSTEM_Initialize();
@@ -73,82 +79,93 @@ int main(void) {
 
     struct ina219_data readings;
     int values[2];
-
+    PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_detect);
+    for (uint8_t row = 0; row < 4; row++) {
+        for (uint8_t column = 0; column < 8; column++) {
+            IS31FL3637_set_LED(DISPLAY_B_ADDR, column, row, 0x00, 0x00, 0x00);
+        }
+    }
+    IS31FL3637_update_display(DISPLAY_B_ADDR);
+    uint8_t reading_count = 0;
     while (1) {
 
-        readings = INA219_getReadings();
+        if (switch_pressed) {
+            switch_pressed = false;
+            reading_count++;
+            readings = INA219_getReadings();
 
-        printf("READINGS\n");
-        // printf("Bus Voltage\tShunt Voltage\tCurrent mA\tPower mW\n");
-        splitFloat(values, readings.bus_voltage);
-        printf("  Bus Voltage: %d.%03d V\n", values[0], values[1]);
-        splitFloat(values, readings.shunt_voltage);
-        printf("Shunt Voltage: %d.%03d mV\n", values[0], values[1]);
-        splitFloat(values, readings.current);
-        printf("      Current: %d.%03d mA\n", values[0], values[1]);
-        splitFloat(values, readings.power);
-        printf("        Power: %d.%03d mW\n", values[0], values[1]);
-        LED_Toggle();
+            printf("READING: %d\r\n", reading_count);
+            // printf("Bus Voltage\tShunt Voltage\tCurrent mA\tPower mW\n");
+            splitFloat(values, readings.bus_voltage);
+            printf("  Bus Voltage: raw: 0x%04X, %d, act: %d.%03d V\r\n", readings.raw_bus_voltage, readings.raw_bus_voltage, values[0], values[1]);
+            splitFloat(values, readings.shunt_voltage);
+            printf("Shunt Voltage: raw: 0x%04X, %d, act: %d.%03d mV\r\n", readings.raw_shunt_voltage, readings.raw_shunt_voltage, values[0], values[1]);
+            splitFloat(values, readings.current);
+            printf("      Current: raw: 0x%04X, %d, act: %d.%03d mA\r\n", readings.raw_current, readings.raw_current, values[0], values[1]);
+            splitFloat(values, readings.power);
+            printf("        Power: raw: 0x%04X, %d, act: %d.%03d mW\r\n\r\n", readings.raw_power, readings.raw_power, values[0], values[1]);
 
-        uint8_t red, green, blue;
-        uint8_t level = 0;
-        if (readings.power < 600) { // Blue
-            red = 0x00;
-            green = 0x00;
-            blue = 0xff;
-            level = 0;
-        } else if (readings.power < 1200) { // Azure
-            red = 0x00;
-            green = 0x7F;
-            blue = 0xfF;
-            level = 0;
-        } else if (readings.power < 1800) { // Cyan 
-            red = 0x00;
-            green = 0xff;
-            blue = 0xff;
-            level = 1;
-        } else if (readings.power < 2400) { // Aquamarine
-            red = 0x00;
-            green = 0xff;
-            blue = 0x7f;
-            level = 2;
-        } else if (readings.power < 3000) { // Green
-            red = 0x00;
-            green = 0xff;
-            blue = 0x00;
-            level = 3;
-        } else if (readings.power < 3600) { // Chartreuse
-            red = 0x7f;
-            green = 0xff;
-            blue = 0x00;
-            level = 4;
-        } else if (readings.power < 4200) { // Yellow
-            red = 0xff;
-            green = 0xff;
-            blue = 0x00;
-            level = 5;
-        } else if (readings.power < 4800) { // Orange
-            red = 0xff;
-            green = 0x3f;
-            blue = 0x00;
-            level = 6;
-        } else { // Red
-            red = 0xff;
-            green = 0x00;
-            blue = 0x00;
-            level = 7;
-        }
-        for (uint8_t row = 0; row < 4; row++) {
-            for (uint8_t column = 0; column < 8; column++) {
-                if (column <= level) {
-                    IS31FL3637_set_LED(DISPLAY_B_ADDR, column, row, red, green, blue);
-                } else {
-                    IS31FL3637_set_LED(DISPLAY_B_ADDR, column, row, 0x00, 0x00, 0x00);
+            uint8_t red, green, blue;
+            uint8_t level = 0;
+            if (readings.power < 600) { // Blue
+                red = 0x00;
+                green = 0x00;
+                blue = 0xff;
+                level = 0;
+            } else if (readings.power < 1200) { // Azure
+                red = 0x00;
+                green = 0x7F;
+                blue = 0xfF;
+                level = 0;
+            } else if (readings.power < 1800) { // Cyan 
+                red = 0x00;
+                green = 0xff;
+                blue = 0xff;
+                level = 1;
+            } else if (readings.power < 2400) { // Aquamarine
+                red = 0x00;
+                green = 0xff;
+                blue = 0x7f;
+                level = 2;
+            } else if (readings.power < 3000) { // Green
+                red = 0x00;
+                green = 0xff;
+                blue = 0x00;
+                level = 3;
+            } else if (readings.power < 3600) { // Chartreuse
+                red = 0x7f;
+                green = 0xff;
+                blue = 0x00;
+                level = 4;
+            } else if (readings.power < 4200) { // Yellow
+                red = 0xff;
+                green = 0xff;
+                blue = 0x00;
+                level = 5;
+            } else if (readings.power < 4800) { // Orange
+                red = 0xff;
+                green = 0x3f;
+                blue = 0x00;
+                level = 6;
+            } else { // Red
+                red = 0xff;
+                green = 0x00;
+                blue = 0x00;
+                level = 7;
+            }
+            for (uint8_t row = 0; row < 4; row++) {
+                for (uint8_t column = 0; column < 8; column++) {
+                    if (column <= level) {
+                        IS31FL3637_set_LED(DISPLAY_B_ADDR, column, row, red, green, blue);
+                    } else {
+                        IS31FL3637_set_LED(DISPLAY_B_ADDR, column, row, 0x00, 0x00, 0x00);
+                    }
                 }
             }
-        }
 
-        IS31FL3637_update_display(DISPLAY_B_ADDR);
+            IS31FL3637_update_display(DISPLAY_B_ADDR);
+        }
+        LED_Toggle();
         _delay_ms(1000);
     }
 }

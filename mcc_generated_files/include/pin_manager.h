@@ -72,6 +72,24 @@
 #define PB2_DisableDigitalInputBuffer() do { PORTB.PIN2CTRL = (PORTB.PIN2CTRL & ~PORT_ISC_gm) | 0x4 ; } while(0)
 #define PB2_EnableInterruptForLowLevelSensing() do { PORTB.PIN2CTRL = (PORTB.PIN2CTRL & ~PORT_ISC_gm) | 0x5 ; } while(0)
 
+//get/set SW300_PB5 aliases
+#define SW300_PB5_SetHigh() do { PORTB_OUTSET = 0x20; } while(0)
+#define SW300_PB5_SetLow() do { PORTB_OUTCLR = 0x20; } while(0)
+#define SW300_PB5_Toggle() do { PORTB_OUTTGL = 0x20; } while(0)
+#define SW300_PB5_GetValue() (VPORTB.IN & (0x1 << 5))
+#define SW300_PB5_SetDigitalInput() do { PORTB_DIRCLR = 0x20; } while(0)
+#define SW300_PB5_SetDigitalOutput() do { PORTB_DIRSET = 0x20; } while(0)
+#define SW300_PB5_SetPullUp() do { PORTB_PIN5CTRL  |= PORT_PULLUPEN_bm; } while(0)
+#define SW300_PB5_ResetPullUp() do { PORTB_PIN5CTRL  &= ~PORT_PULLUPEN_bm; } while(0)
+#define SW300_PB5_SetInverted() do { PORTB_PIN5CTRL  |= PORT_INVEN_bm; } while(0)
+#define SW300_PB5_ResetInverted() do { PORTB_PIN5CTRL  &= ~PORT_INVEN_bm; } while(0)
+#define SW300_PB5_DisableInterruptOnChange() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x0 ; } while(0)
+#define SW300_PB5_EnableInterruptForBothEdges() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x1 ; } while(0)
+#define SW300_PB5_EnableInterruptForRisingEdge() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x2 ; } while(0)
+#define SW300_PB5_EnableInterruptForFallingEdge() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x3 ; } while(0)
+#define SW300_PB5_DisableDigitalInputBuffer() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x4 ; } while(0)
+#define SW300_PB5_EnableInterruptForLowLevelSensing() do { PORTB.PIN5CTRL = (PORTB.PIN5CTRL & ~PORT_ISC_gm) | 0x5 ; } while(0)
+
 //get/set LED aliases
 #define LED_SetHigh() do { PORTB_OUTSET = 0x10; } while(0)
 #define LED_SetLow() do { PORTB_OUTCLR = 0x10; } while(0)
@@ -131,6 +149,8 @@ void PORTB_PB3_DefaultInterruptHandler(void);
 void PORTB_PB3_SetInterruptHandler(void (* interruptHandler)(void)) ;
 void PORTB_PB2_DefaultInterruptHandler(void);
 void PORTB_PB2_SetInterruptHandler(void (* interruptHandler)(void)) ;
+void PORTB_SW300_PB5_DefaultInterruptHandler(void);
+void PORTB_SW300_PB5_SetInterruptHandler(void (* interruptHandler)(void)) ;
 void PORTB_LED_DefaultInterruptHandler(void);
 void PORTB_LED_SetInterruptHandler(void (* interruptHandler)(void)) ;
 void PORTB_PB1_DefaultInterruptHandler(void);

@@ -34,6 +34,7 @@
 #include "../include/pin_manager.h"
 static void (*PORTB_PB3_InterruptHandler)(void);
 static void (*PORTB_PB2_InterruptHandler)(void);
+static void (*PORTB_SW300_PB5_InterruptHandler)(void);
 static void (*PORTB_LED_InterruptHandler)(void);
 static void (*PORTB_PB1_InterruptHandler)(void);
 static void (*PORTB_PB0_InterruptHandler)(void);
@@ -68,7 +69,7 @@ void PIN_MANAGER_Initialize()
     PORTB.PIN2CTRL = 0x00;
     PORTB.PIN3CTRL = 0x00;
     PORTB.PIN4CTRL = 0x00;
-    PORTB.PIN5CTRL = 0x00;
+    PORTB.PIN5CTRL = 0x03;
     PORTB.PIN6CTRL = 0x00;
     PORTB.PIN7CTRL = 0x00;
     PORTC.PIN0CTRL = 0x00;
@@ -89,6 +90,7 @@ void PIN_MANAGER_Initialize()
     // register default ISC callback functions at runtime; use these methods to register a custom function
     PORTB_PB3_SetInterruptHandler(PORTB_PB3_DefaultInterruptHandler);
     PORTB_PB2_SetInterruptHandler(PORTB_PB2_DefaultInterruptHandler);
+    PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_DefaultInterruptHandler);
     PORTB_LED_SetInterruptHandler(PORTB_LED_DefaultInterruptHandler);
     PORTB_PB1_SetInterruptHandler(PORTB_PB1_DefaultInterruptHandler);
     PORTB_PB0_SetInterruptHandler(PORTB_PB0_DefaultInterruptHandler);
@@ -142,6 +144,19 @@ void PORTB_PB2_DefaultInterruptHandler(void)
     // or set custom function using PORTB_PB2_SetInterruptHandler()
 }
 /**
+  Allows selecting an interrupt handler for PORTB_SW300_PB5 at application runtime
+*/
+void PORTB_SW300_PB5_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    PORTB_SW300_PB5_InterruptHandler = interruptHandler;
+}
+
+void PORTB_SW300_PB5_DefaultInterruptHandler(void)
+{
+    // add your PORTB_SW300_PB5 interrupt custom code
+    // or set custom function using PORTB_SW300_PB5_SetInterruptHandler()
+}
+/**
   Allows selecting an interrupt handler for PORTB_LED at application runtime
 */
 void PORTB_LED_SetInterruptHandler(void (* interruptHandler)(void)) 
@@ -180,3 +195,35 @@ void PORTB_PB0_DefaultInterruptHandler(void)
     // add your PORTB_PB0 interrupt custom code
     // or set custom function using PORTB_PB0_SetInterruptHandler()
 }
+ISR(PORTB_PORT_vect)
+{  
+    // Call the interrupt handler for the callback registered at runtime
+    if(VPORTB.INTFLAGS & PORT_INT3_bm)
+    {
+       PORTB_PB3_InterruptHandler();
+    }
+    if(VPORTB.INTFLAGS & PORT_INT2_bm)
+    {
+       PORTB_PB2_InterruptHandler();
+    }
+    if(VPORTB.INTFLAGS & PORT_INT5_bm)
+    {
+       PORTB_SW300_PB5_InterruptHandler();
+    }
+    if(VPORTB.INTFLAGS & PORT_INT4_bm)
+    {
+       PORTB_LED_InterruptHandler();
+    }
+    if(VPORTB.INTFLAGS & PORT_INT1_bm)
+    {
+       PORTB_PB1_InterruptHandler();
+    }
+    if(VPORTB.INTFLAGS & PORT_INT0_bm)
+    {
+       PORTB_PB0_InterruptHandler();
+    }
+
+    /* Clear interrupt flags */
+    VPORTB.INTFLAGS = 0xff;
+}
+

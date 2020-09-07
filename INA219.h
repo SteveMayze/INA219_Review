@@ -56,7 +56,8 @@ extern "C" {
 #define INA219_CURRENT (0x04)
 #define INA219_CAL (0x05)    
 
-#define INA219_DEFAULT_CFG_LSBFIRST 0x0399
+//#define INA219_DEFAULT_CFG_LSBFIRST 0x0399
+#define INA219_DEFAULT_CFG_LSBFIRST 0x9F21
 
 // #define INA219_DEFAULT_CFG_MSBFIRST 0x9903
 #define INA219_DEFAULT_CFG_MSBFIRST 0x9F19
@@ -80,6 +81,11 @@ extern "C" {
     
     
     struct ina219_data {
+        uint16_t raw_shunt_voltage;
+        uint16_t raw_bus_voltage;
+        uint16_t raw_current;
+        uint16_t raw_power;
+        
         float shunt_voltage;
         float bus_voltage;
         float power;
