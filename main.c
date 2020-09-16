@@ -49,7 +49,82 @@ uint8_t readString(bool block) {
     return i;
 }
 
-#define _INA219_CHECK
+#define _INA219_CSOS_LOAD
+
+#ifdef _INA219_CSOS_LOAD
+
+#define INA219_ADDRESS INA219_ADDR_GND_GND
+#define DISPLAY_A_ADDR IS31FL3637_Addr7_GND_GND
+#define DISPLAY_B_ADDR IS31FL3637_Addr7_GND_SCL
+
+void splitFloat(int *result, float value) {
+    result[0] = trunc(value);
+    result[1] = trunc((value - result[0]) * 1000);
+}
+
+volatile static bool switch_pressed;
+volatile static uint16_t timestamp;
+volatile static uint16_t last_press;
+volatile static uint8_t reading_count = 0;
+
+static void PORTB_SW300_PB5_detect() {
+    if ( SW300_PB5_GetValue() ) {
+        // HIGH
+        if( timestamp - last_press > 3 ) {
+            timestamp = 0;
+            last_press = 0;
+            reading_count = 0;
+        }
+    } else {
+        // Low
+        switch_pressed = true;
+        last_press = timestamp;
+    }
+}
+
+int main(void) {
+    /* Initialises MCU, drivers and middle-ware */
+    SYSTEM_Initialize();
+
+    INA219_Initialise(INA219_ADDRESS);
+
+    struct ina219_data readings;
+    int vshunt[2];
+    int vbus[2];
+    int current[2];
+    int power[2];
+    
+    PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_detect);
+    reading_count = 0;
+    while (1) {
+
+        if (switch_pressed) {
+            switch_pressed = false;
+            reading_count++;
+            readings = INA219_getReadings();
+
+            if ( reading_count == 1 ) {
+                printf("reading, timestamp, Vshunt-raw, Vshunt, Vbus-raw, Vbus, current-raw, current, power-raw, power\r\n");
+            }
+            
+            splitFloat(vshunt, readings.shunt_voltage);
+            splitFloat(vbus, readings.bus_voltage);
+            splitFloat(current, readings.current);
+            splitFloat(power, readings.power);
+            printf("%d, %d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d\r\n", 
+                    reading_count, timestamp,
+                    readings.raw_shunt_voltage, vshunt[0], vshunt[1],
+                    readings.raw_bus_voltage, vbus[0], vbus[1],
+                    readings.raw_current, current[0], current[1],
+                    readings.raw_power, power[0], power[1]
+                );
+        }
+        LED_Toggle();
+        _delay_ms(1000);
+        timestamp++;
+    }
+}
+#endif
 
 
 #ifdef _INA219_CHECK
