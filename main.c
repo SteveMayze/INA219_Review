@@ -64,9 +64,23 @@ void splitFloat(int *result, float value) {
 }
 
 volatile static bool switch_pressed;
+volatile static uint16_t timestamp;
+volatile static uint16_t last_press;
+volatile static uint8_t reading_count = 0;
 
 static void PORTB_SW300_PB5_detect() {
-    switch_pressed = true;
+    if ( SW300_PB5_GetValue() ) {
+        // HIGH
+        if( timestamp - last_press > 3 ) {
+            timestamp = 0;
+            last_press = 0;
+            reading_count = 0;
+        }
+    } else {
+        // Low
+        switch_pressed = true;
+        last_press = timestamp;
+    }
 }
 
 int main(void) {
@@ -78,7 +92,11 @@ int main(void) {
     IS31FL3637_Initialise(DISPLAY_B_ADDR);
 
     struct ina219_data readings;
-    int values[2];
+    int vshunt[2];
+    int vbus[2];
+    int current[2];
+    int power[2];
+    
     PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_detect);
     for (uint8_t row = 0; row < 4; row++) {
         for (uint8_t column = 0; column < 8; column++) {
@@ -86,7 +104,7 @@ int main(void) {
         }
     }
     IS31FL3637_update_display(DISPLAY_B_ADDR);
-    uint8_t reading_count = 0;
+    reading_count = 0;
     while (1) {
 
         if (switch_pressed) {
@@ -94,55 +112,72 @@ int main(void) {
             reading_count++;
             readings = INA219_getReadings();
 
-            printf("READING: %d\r\n", reading_count);
+//            printf("READING: %d @ %d\r\n", reading_count, timestamp);
+//            // printf("Bus Voltage\tShunt Voltage\tCurrent mA\tPower mW\n");
+//            splitFloat(values, readings.bus_voltage);
+//            printf("  Bus Voltage: raw: 0x%04X, %d, act: %d.%03d V\r\n", readings.raw_bus_voltage, readings.raw_bus_voltage, values[0], values[1]);
+//            splitFloat(values, readings.shunt_voltage);
+//            printf("Shunt Voltage: raw: 0x%04X, %d, act: %d.%03d mV\r\n", readings.raw_shunt_voltage, readings.raw_shunt_voltage, values[0], values[1]);
+//            splitFloat(values, readings.current);
+//            printf("      Current: raw: 0x%04X, %d, act: %d.%03d mA\r\n", readings.raw_current, readings.raw_current, values[0], values[1]);
+//            splitFloat(values, readings.power);
+//            printf("        Power: raw: 0x%04X, %d, act: %d.%03d mW\r\n\r\n", readings.raw_power, readings.raw_power, values[0], values[1]);
+
+            if ( reading_count == 1 ) {
+                printf("reading, timestamp, Vshunt-raw, Vshunt, Vbus-raw, Vbus, current-raw, current, power-raw, power\r\n");
+            }
+            
             // printf("Bus Voltage\tShunt Voltage\tCurrent mA\tPower mW\n");
-            splitFloat(values, readings.bus_voltage);
-            printf("  Bus Voltage: raw: 0x%04X, %d, act: %d.%03d V\r\n", readings.raw_bus_voltage, readings.raw_bus_voltage, values[0], values[1]);
-            splitFloat(values, readings.shunt_voltage);
-            printf("Shunt Voltage: raw: 0x%04X, %d, act: %d.%03d mV\r\n", readings.raw_shunt_voltage, readings.raw_shunt_voltage, values[0], values[1]);
-            splitFloat(values, readings.current);
-            printf("      Current: raw: 0x%04X, %d, act: %d.%03d mA\r\n", readings.raw_current, readings.raw_current, values[0], values[1]);
-            splitFloat(values, readings.power);
-            printf("        Power: raw: 0x%04X, %d, act: %d.%03d mW\r\n\r\n", readings.raw_power, readings.raw_power, values[0], values[1]);
+            splitFloat(vshunt, readings.shunt_voltage);
+            splitFloat(vbus, readings.bus_voltage);
+            splitFloat(current, readings.current);
+            splitFloat(power, readings.power);
+            printf("%d, %d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d\r\n", 
+                    reading_count, timestamp,
+                    readings.raw_shunt_voltage, vshunt[0], vshunt[1],
+                    readings.raw_bus_voltage, vbus[0], vbus[1],
+                    readings.raw_current, current[0], current[1],
+                    readings.raw_power, power[0], power[1]
+                );
 
             uint8_t red, green, blue;
             uint8_t level = 0;
-            if (readings.power < 600) { // Blue
+            if (readings.power < 1250) { // Blue
                 red = 0x00;
                 green = 0x00;
                 blue = 0xff;
                 level = 0;
-            } else if (readings.power < 1200) { // Azure
+            } else if (readings.power < 250) { // Azure
                 red = 0x00;
                 green = 0x7F;
                 blue = 0xfF;
                 level = 0;
-            } else if (readings.power < 1800) { // Cyan 
+            } else if (readings.power < 3750) { // Cyan 
                 red = 0x00;
                 green = 0xff;
                 blue = 0xff;
                 level = 1;
-            } else if (readings.power < 2400) { // Aquamarine
+            } else if (readings.power < 5000) { // Aquamarine
                 red = 0x00;
                 green = 0xff;
                 blue = 0x7f;
                 level = 2;
-            } else if (readings.power < 3000) { // Green
+            } else if (readings.power < 6250) { // Green
                 red = 0x00;
                 green = 0xff;
                 blue = 0x00;
                 level = 3;
-            } else if (readings.power < 3600) { // Chartreuse
+            } else if (readings.power < 7500) { // Chartreuse
                 red = 0x7f;
                 green = 0xff;
                 blue = 0x00;
                 level = 4;
-            } else if (readings.power < 4200) { // Yellow
+            } else if (readings.power < 8750) { // Yellow
                 red = 0xff;
                 green = 0xff;
                 blue = 0x00;
                 level = 5;
-            } else if (readings.power < 4800) { // Orange
+            } else if (readings.power < 1000) { // Orange
                 red = 0xff;
                 green = 0x3f;
                 blue = 0x00;
@@ -167,6 +202,7 @@ int main(void) {
         }
         LED_Toggle();
         _delay_ms(1000);
+        timestamp++;
     }
 }
 #endif
