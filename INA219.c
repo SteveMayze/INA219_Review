@@ -6,7 +6,8 @@
 static volatile uint8_t iic_address;
 uint8_t ina219_buf[3];
 
-#define CAL_MSBFIRST 0x0010
+// #define CAL_MSBFIRST 0x0010
+#define CAL_MSBFIRST 0x0E0F
 
 void INA219_Initialise(uint8_t addr) {
     iic_address = addr;
