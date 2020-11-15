@@ -70,6 +70,8 @@
       <itemPath>TWI0_Util.h</itemPath>
       <itemPath>INA219.c</itemPath>
       <itemPath>INA219.h</itemPath>
+      <itemPath>lcd_iic.h</itemPath>
+      <itemPath>lcd_iic.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
