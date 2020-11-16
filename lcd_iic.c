@@ -45,7 +45,7 @@ void LCD_IIC_initDispl(uint8_t addr) {
 	WriteIns(0x38); //8-Bit data length extension Bit RE=0; IS=0
 
 	ClrDisplay();
-	DisplayOnOff(DISPLAY_ON | CURSOR_ON | BLINK_ON);
+	DisplayOnOff(DISPLAY_ON );
 }
 
 //-----------------------------------------------------

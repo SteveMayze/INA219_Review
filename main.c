@@ -61,7 +61,7 @@ uint8_t readString(bool block) {
 
 void splitFloat(int *result, float value) {
     result[0] = trunc(value);
-    result[1] = trunc((value - result[0]) * 1000);
+    result[1] = trunc((value - result[0]) * 10);
 }
 
 volatile static bool switch_pressed;
@@ -126,14 +126,18 @@ int main(void) {
 //                );
             ClrDisplay();
             SetPostion(LINE1);
-            sprintf(msg, "Count: %d", reading_count);
+            sprintf(msg, "Count: %u", reading_count);
             WriteString((uint8_t *)msg);
             SetPostion(LINE2);
-            sprintf(msg, "V:%d.%03d",  vbus[0], vbus[1]);
+            sprintf(msg, "U:%2u.%1dV",  vbus[0], vbus[1]);
             WriteString((uint8_t *)msg);
             SetPostion(LINE3);
-            sprintf(msg, "I:%d.%03d",  current[0], current[1]);
+            sprintf(msg, "I:%u.%1dmA",  current[0], current[1]);
             WriteString((uint8_t *)msg);
+            SetPostion(LINE4);
+            sprintf(msg, "P:%umW",  power[0]);
+            WriteString((uint8_t *)msg);
+
 
         }
         LED_Toggle();
