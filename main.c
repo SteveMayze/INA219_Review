@@ -69,8 +69,8 @@ volatile static uint16_t timestamp;
 volatile static uint16_t last_press;
 volatile static uint8_t reading_count = 0;
 
-static void PORTB_SW300_PB5_detect() {
-    if ( SW300_PB5_GetValue() ) {
+static void PORTA_SW1_PA6_detect() {
+    if (  !SW1_PA6_GetValue() ) {
         // HIGH
         if( timestamp - last_press > 3 ) {
             timestamp = 0;
@@ -98,7 +98,7 @@ int main(void) {
     int current[2];
     int power[2];
     
-    PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_detect);
+    PORTA_SW1_PA6_SetInterruptHandler(PORTA_SW1_PA6_detect);
     reading_count = 0;
     
     char msg[11];

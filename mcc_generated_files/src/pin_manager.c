@@ -36,6 +36,7 @@ static void (*PORTB_PB3_InterruptHandler)(void);
 static void (*PORTB_PB2_InterruptHandler)(void);
 static void (*PORTB_SW300_PB5_InterruptHandler)(void);
 static void (*PORTB_LED_InterruptHandler)(void);
+static void (*PORTA_SW1_PA6_InterruptHandler)(void);
 static void (*PORTB_PB1_InterruptHandler)(void);
 static void (*PORTB_PB0_InterruptHandler)(void);
 
@@ -62,8 +63,8 @@ void PIN_MANAGER_Initialize()
     PORTA.PIN3CTRL = 0x00;
     PORTA.PIN4CTRL = 0x00;
     PORTA.PIN5CTRL = 0x00;
-    PORTA.PIN6CTRL = 0x00;
-    PORTA.PIN7CTRL = 0x00;
+    PORTA.PIN6CTRL = 0x01;
+    PORTA.PIN7CTRL = 0x01;
     PORTB.PIN0CTRL = 0x00;
     PORTB.PIN1CTRL = 0x00;
     PORTB.PIN2CTRL = 0x00;
@@ -92,6 +93,7 @@ void PIN_MANAGER_Initialize()
     PORTB_PB2_SetInterruptHandler(PORTB_PB2_DefaultInterruptHandler);
     PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_DefaultInterruptHandler);
     PORTB_LED_SetInterruptHandler(PORTB_LED_DefaultInterruptHandler);
+    PORTA_SW1_PA6_SetInterruptHandler(PORTA_SW1_PA6_DefaultInterruptHandler);
     PORTB_PB1_SetInterruptHandler(PORTB_PB1_DefaultInterruptHandler);
     PORTB_PB0_SetInterruptHandler(PORTB_PB0_DefaultInterruptHandler);
 }
@@ -170,6 +172,19 @@ void PORTB_LED_DefaultInterruptHandler(void)
     // or set custom function using PORTB_LED_SetInterruptHandler()
 }
 /**
+  Allows selecting an interrupt handler for PORTA_SW1_PA6 at application runtime
+*/
+void PORTA_SW1_PA6_SetInterruptHandler(void (* interruptHandler)(void)) 
+{
+    PORTA_SW1_PA6_InterruptHandler = interruptHandler;
+}
+
+void PORTA_SW1_PA6_DefaultInterruptHandler(void)
+{
+    // add your PORTA_SW1_PA6 interrupt custom code
+    // or set custom function using PORTA_SW1_PA6_SetInterruptHandler()
+}
+/**
   Allows selecting an interrupt handler for PORTB_PB1 at application runtime
 */
 void PORTB_PB1_SetInterruptHandler(void (* interruptHandler)(void)) 
@@ -195,6 +210,18 @@ void PORTB_PB0_DefaultInterruptHandler(void)
     // add your PORTB_PB0 interrupt custom code
     // or set custom function using PORTB_PB0_SetInterruptHandler()
 }
+ISR(PORTA_PORT_vect)
+{  
+    // Call the interrupt handler for the callback registered at runtime
+    if(VPORTA.INTFLAGS & PORT_INT6_bm)
+    {
+       PORTA_SW1_PA6_InterruptHandler();
+    }
+
+    /* Clear interrupt flags */
+    VPORTA.INTFLAGS = 0xff;
+}
+
 ISR(PORTB_PORT_vect)
 {  
     // Call the interrupt handler for the callback registered at runtime
