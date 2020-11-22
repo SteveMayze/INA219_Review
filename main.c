@@ -27,6 +27,7 @@
 #include <string.h>
 #include "INA219.h"
 #include "IS31FL3637.h"
+#include "lcd_iic.h"
 
 /*
     Main application
@@ -56,10 +57,11 @@ uint8_t readString(bool block) {
 #define INA219_ADDRESS INA219_ADDR_GND_GND
 #define DISPLAY_A_ADDR IS31FL3637_Addr7_GND_GND
 #define DISPLAY_B_ADDR IS31FL3637_Addr7_GND_SCL
+#define DISPLAY_ADDRESS LCD_IIC_SA0_GND
 
 void splitFloat(int *result, float value) {
     result[0] = trunc(value);
-    result[1] = trunc((value - result[0]) * 1000);
+    result[1] = trunc((value - result[0]) * 10);
 }
 
 volatile static bool switch_pressed;
@@ -67,8 +69,8 @@ volatile static uint16_t timestamp;
 volatile static uint16_t last_press;
 volatile static uint8_t reading_count = 0;
 
-static void PORTB_SW300_PB5_detect() {
-    if ( SW300_PB5_GetValue() ) {
+static void PORTA_SW1_PA6_detect() {
+    if (  !SW1_PA6_GetValue() ) {
         // HIGH
         if( timestamp - last_press > 3 ) {
             timestamp = 0;
@@ -85,6 +87,8 @@ static void PORTB_SW300_PB5_detect() {
 int main(void) {
     /* Initialises MCU, drivers and middle-ware */
     SYSTEM_Initialize();
+    
+    LCD_IIC_initDispl(DISPLAY_ADDRESS);
 
     INA219_Initialise(INA219_ADDRESS);
 
@@ -94,8 +98,10 @@ int main(void) {
     int current[2];
     int power[2];
     
-    PORTB_SW300_PB5_SetInterruptHandler(PORTB_SW300_PB5_detect);
+    PORTA_SW1_PA6_SetInterruptHandler(PORTA_SW1_PA6_detect);
     reading_count = 0;
+    
+    char msg[11];
     while (1) {
 
         if (switch_pressed) {
@@ -103,21 +109,36 @@ int main(void) {
             reading_count++;
             readings = INA219_getReadings();
 
-            if ( reading_count == 1 ) {
-                printf("reading, timestamp, Vshunt-raw, Vshunt, Vbus-raw, Vbus, current-raw, current, power-raw, power\r\n");
-            }
+//            if ( reading_count == 1 ) {
+//                printf("reading, timestamp, Vshunt-raw, Vshunt, Vbus-raw, Vbus, current-raw, current, power-raw, power\r\n");
+//            }
             
             splitFloat(vshunt, readings.shunt_voltage);
             splitFloat(vbus, readings.bus_voltage);
             splitFloat(current, readings.current);
             splitFloat(power, readings.power);
-            printf("%d, %d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d\r\n", 
-                    reading_count, timestamp,
-                    readings.raw_shunt_voltage, vshunt[0], vshunt[1],
-                    readings.raw_bus_voltage, vbus[0], vbus[1],
-                    readings.raw_current, current[0], current[1],
-                    readings.raw_power, power[0], power[1]
-                );
+//            printf("%d, %d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d, 0x%04x, %d.%03d\r\n", 
+//                    reading_count, timestamp,
+//                    readings.raw_shunt_voltage, vshunt[0], vshunt[1],
+//                    readings.raw_bus_voltage, vbus[0], vbus[1],
+//                    readings.raw_current, current[0], current[1],
+//                    readings.raw_power, power[0], power[1]
+//                );
+            ClrDisplay();
+            SetPostion(LINE1);
+            sprintf(msg, "Count: %u", reading_count);
+            WriteString((uint8_t *)msg);
+            SetPostion(LINE2);
+            sprintf(msg, "U:%2u.%1dV",  vbus[0], vbus[1]);
+            WriteString((uint8_t *)msg);
+            SetPostion(LINE3);
+            sprintf(msg, "I:%u.%1dmA",  current[0], current[1]);
+            WriteString((uint8_t *)msg);
+            SetPostion(LINE4);
+            sprintf(msg, "P:%umW",  power[0]);
+            WriteString((uint8_t *)msg);
+
+
         }
         LED_Toggle();
         _delay_ms(1000);
